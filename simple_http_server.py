@@ -54,15 +54,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         """Serve a GET request."""
-        fd = self.send_head()
-        if fd:
+        if fd := self.send_head():
             shutil.copyfileobj(fd, self.wfile)
             fd.close()
 
     def do_HEAD(self):
         """Serve a HEAD request."""
-        fd = self.send_head()
-        if fd:
+        if fd := self.send_head():
             fd.close()
 
     def do_POST(self):
@@ -124,9 +122,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             line = self.rfile.readline()
             remain_bytes -= len(line)
             if boundary in line:
-                pre_line = pre_line[0:-1]
+                pre_line = pre_line[:-1]
                 if pre_line.endswith(b'\r'):
-                    pre_line = pre_line[0:-1]
+                    pre_line = pre_line[:-1]
                 out.write(pre_line)
                 out.close()
                 return True, "File '%s' upload success!" % fn
@@ -148,7 +146,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             if not self.path.endswith('/'):
                 # redirect browser - doing basically what apache does
                 self.send_response(301)
-                self.send_header("Location", self.path + "/")
+                self.send_header("Location", f"{self.path}/")
                 self.end_headers()
                 return None
             for index in "index.html", "index.htm":
@@ -202,11 +200,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             display_name = linkname = name
             # Append / for directories or @ for symbolic links
             if os.path.isdir(fullname):
-                display_name = name + "/"
-                linkname = name + "/"
+                display_name = f"{name}/"
+                linkname = f"{name}/"
             if os.path.islink(fullname):
-                display_name = name + "@"
-                # Note: a link to a directory displays with @ and links with /
+                display_name = f"{name}@"
+                        # Note: a link to a directory displays with @ and links with /
             f.write(b'<li><a href="%s">%s</a>\n' % (quote(linkname).encode('utf-8'), escape(display_name).encode('utf-8')))
         f.write(b"</ul>\n<hr>\n</body>\n</html>\n")
         length = f.tell()
@@ -289,9 +287,22 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
     httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
     server = httpd.socket.getsockname()
-    print("server_version: " + SimpleHTTPRequestHandler.server_version + ", python_version: " + SimpleHTTPRequestHandler.sys_version)
-    print("sys encoding: " + sys.getdefaultencoding())
-    print("Serving http on: " + str(server[0]) + ", port: " + str(server[1]) + " ... (http://" + server[0] + ":" + str(server[1]) + "/)")
+    print(
+        f"server_version: {SimpleHTTPRequestHandler.server_version}"
+        + ", python_version: "
+        + SimpleHTTPRequestHandler.sys_version
+    )
+
+    print(f"sys encoding: {sys.getdefaultencoding()}")
+    print(
+        f"Serving http on: {str(server[0])}, port: {str(server[1])}"
+        + " ... (http://"
+        + server[0]
+        + ":"
+        + str(server[1])
+        + "/)"
+    )
+
     httpd.serve_forever()
 
 if __name__ == '__main__':
